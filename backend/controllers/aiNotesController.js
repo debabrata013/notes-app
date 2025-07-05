@@ -1,4 +1,4 @@
-const { Note, notes } = require('../models/noteModel');
+const { Note } = require('../models/noteModel');
 const geminiService = require('../services/geminiService');
 
 // Generate AI Note
@@ -32,19 +32,15 @@ const generateAINote = async (req, res) => {
             }
         }
 
-        // Create and save the note
-        const newNote = {
-            id: Date.now(),
+        // Create and save the note to database
+        const newNote = await Note.create({
             userId: req.user.id,
             title: title,
             content: aiResult.content,
             isAIGenerated: true,
             noteType: noteType,
-            originalPrompt: prompt,
-            createdAt: new Date().toISOString()
-        };
-
-        notes.push(newNote);
+            originalPrompt: prompt
+        });
 
         res.status(201).json({ 
             message: 'AI note generated successfully', 
@@ -67,7 +63,7 @@ const improveNote = async (req, res) => {
         const { improvementType = 'enhance' } = req.body;
 
         // Find the note
-        const note = notes.find(n => n.id == noteId && n.userId == req.user.id);
+        const note = await Note.findByIdAndUserId(noteId, req.user.id);
         if (!note) {
             return res.status(404).json({ message: 'Note not found' });
         }
@@ -82,14 +78,22 @@ const improveNote = async (req, res) => {
             });
         }
 
-        // Update the note
-        note.content = aiResult.content;
-        note.lastImproved = new Date().toISOString();
-        note.improvementType = improvementType;
+        // Update the note in database
+        const updated = await Note.update(noteId, req.user.id, {
+            content: aiResult.content,
+            improvementType: improvementType
+        });
+
+        if (!updated) {
+            return res.status(400).json({ message: 'Failed to update note' });
+        }
+
+        // Get updated note
+        const updatedNote = await Note.findByIdAndUserId(noteId, req.user.id);
 
         res.json({ 
             message: 'Note improved successfully', 
-            note: note 
+            note: updatedNote 
         });
 
     } catch (error) {
@@ -107,7 +111,7 @@ const generateTitleForNote = async (req, res) => {
         const { noteId } = req.params;
 
         // Find the note
-        const note = notes.find(n => n.id == noteId && n.userId == req.user.id);
+        const note = await Note.findByIdAndUserId(noteId, req.user.id);
         if (!note) {
             return res.status(404).json({ message: 'Note not found' });
         }
@@ -122,13 +126,19 @@ const generateTitleForNote = async (req, res) => {
             });
         }
 
-        // Update the note title
-        note.title = titleResult.title;
-        note.titleGenerated = new Date().toISOString();
+        // Update the note title in database
+        const updated = await Note.updateTitle(noteId, req.user.id, titleResult.title);
+
+        if (!updated) {
+            return res.status(400).json({ message: 'Failed to update note title' });
+        }
+
+        // Get updated note
+        const updatedNote = await Note.findByIdAndUserId(noteId, req.user.id);
 
         res.json({ 
             message: 'Title generated successfully', 
-            note: note 
+            note: updatedNote 
         });
 
     } catch (error) {
