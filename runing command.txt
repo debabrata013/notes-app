@@ -1,0 +1,12 @@
+cd database
+docker-compose up -d
+ //to start the database
+
+ cd backend
+ npm run start
+ //to start the server
+ npm run dev
+ //to start the development server
+
+
+ 
