@@ -54,7 +54,7 @@ export default function Login() {
         
         try {
             const res = await axiosInstance.post('/auth/login', { email, password });
-            login({ email }, res.data.token);
+            login({ email, username: res.data.user.username }, res.data.token);
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || 'Invalid credentials. Please try again.');

@@ -91,17 +91,9 @@ export default function Register() {
         setError('');
         
         try {
-            // Your actual API call
             const userData = { username, email, password };
-            await axiosInstance.post('/auth/register', userData, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
+            await axiosInstance.post('/auth/register', userData);
             navigate('/login');
-            
-            console.log('Registration successful!');
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
