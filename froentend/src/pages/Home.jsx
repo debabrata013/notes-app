@@ -2,21 +2,21 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
     Plus, 
-    Grid, 
-    List, 
+    Search,
+    Grid3X3,
+    List,
     BookOpen,
-    TrendingUp,
-    Star,
     Sparkles,
     User,
-    LogOut
+    LogOut,
+    Filter,
+    MoreHorizontal
 } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
 import NoteCard from '../components/NoteCard';
 import NoteModal from '../components/NoteModal';
 import AIModal from '../components/AIModal';
 import StatsCard from '../components/StatsCard';
-import SearchBar from '../components/SearchBar';
 
 export default function Home() {
     const { user, logout } = useAuth();
@@ -30,7 +30,7 @@ export default function Home() {
     const [showNoteModal, setShowNoteModal] = useState(false);
     const [showAIModal, setShowAIModal] = useState(false);
     const [selectedNote, setSelectedNote] = useState(null);
-    const [modalMode, setModalMode] = useState('create'); // create, edit, view
+    const [modalMode, setModalMode] = useState('create');
 
     useEffect(() => {
         fetchNotes();
@@ -64,7 +64,6 @@ export default function Home() {
     const filterNotes = () => {
         let filtered = notes;
 
-        // Search filter
         if (searchTerm) {
             filtered = filtered.filter(note =>
                 note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -72,7 +71,6 @@ export default function Home() {
             );
         }
 
-        // Category filter
         if (filterCategory !== 'all') {
             if (filterCategory === 'ai') {
                 filtered = filtered.filter(note => note.is_ai_generated);
@@ -112,7 +110,6 @@ export default function Home() {
                 fetchStats();
             } catch (error) {
                 console.error('Error deleting note:', error);
-                alert('Failed to delete note');
             }
         }
     };
@@ -129,41 +126,51 @@ export default function Home() {
         setShowAIModal(false);
     };
 
+    const categories = [
+        { value: 'all', label: 'All' },
+        { value: 'general', label: 'General' },
+        { value: 'work', label: 'Work' },
+        { value: 'personal', label: 'Personal' },
+        { value: 'study', label: 'Study' },
+        { value: 'ai', label: 'AI Generated' }
+    ];
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-white text-lg">Loading your notes...</p>
+                    <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading your notes...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <header className="bg-black/20 backdrop-blur-lg border-b border-white/10">
+            <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <BookOpen className="w-8 h-8 text-purple-400" />
-                                <h1 className="text-2xl font-bold text-white">AI Notes</h1>
+                        <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                <BookOpen className="w-5 h-5 text-white" />
                             </div>
+                            <h1 className="text-xl font-semibold text-gray-900">Notes</h1>
                         </div>
                         
                         <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2 text-white">
-                                <User className="w-5 h-5" />
-                                <span className="hidden sm:inline">{user?.username}</span>
+                            <div className="hidden sm:flex items-center space-x-2 text-gray-700">
+                                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <User className="w-4 h-4" />
+                                </div>
+                                <span className="text-sm font-medium">{user?.username}</span>
                             </div>
                             <button
                                 onClick={logout}
-                                className="flex items-center space-x-2 px-3 py-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600/30 transition-colors"
+                                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                             >
-                                <LogOut className="w-4 h-4" />
-                                <span className="hidden sm:inline">Logout</span>
+                                <LogOut className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
@@ -171,10 +178,10 @@ export default function Home() {
             </header>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                {/* Stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <StatsCard
-                        title="Total Notes"
+                        title="Total"
                         value={stats.totalNotes || 0}
                         icon={BookOpen}
                         color="blue"
@@ -186,107 +193,125 @@ export default function Home() {
                         color="purple"
                     />
                     <StatsCard
-                        title="Favorites"
-                        value={stats.favoriteNotes || 0}
-                        icon={Star}
-                        color="yellow"
-                    />
-                    <StatsCard
                         title="This Week"
                         value={stats.weeklyNotes || 0}
-                        icon={TrendingUp}
+                        icon={BookOpen}
                         color="green"
+                    />
+                    <StatsCard
+                        title="Favorites"
+                        value={stats.favoriteNotes || 0}
+                        icon={BookOpen}
+                        color="yellow"
                     />
                 </div>
 
                 {/* Controls */}
-                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8 border border-white/20">
+                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                        {/* Search and Filter */}
-                        <div className="flex-1">
-                            <SearchBar
-                                searchTerm={searchTerm}
-                                onSearchChange={setSearchTerm}
-                                filterCategory={filterCategory}
-                                onFilterChange={setFilterCategory}
-                                notes={notes}
-                            />
+                        {/* Search */}
+                        <div className="flex-1 max-w-md">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                <input
+                                    type="text"
+                                    placeholder="Search notes..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center space-x-4">
-                            {/* View Mode Toggle */}
-                            <div className="flex items-center bg-white/10 rounded-lg p-1">
+                        {/* Filters and Actions */}
+                        <div className="flex items-center space-x-3">
+                            {/* Category Filter */}
+                            <select
+                                value={filterCategory}
+                                onChange={(e) => setFilterCategory(e.target.value)}
+                                className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                            >
+                                {categories.map(category => (
+                                    <option key={category.value} value={category.value}>
+                                        {category.label}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {/* View Toggle */}
+                            <div className="flex items-center bg-gray-100 rounded-lg p-1">
                                 <button
                                     onClick={() => setViewMode('grid')}
-                                    className={`p-2 rounded-md transition-colors ${
+                                    className={`p-1.5 rounded-md transition-colors ${
                                         viewMode === 'grid' 
-                                            ? 'bg-purple-600 text-white' 
-                                            : 'text-gray-400 hover:text-white'
+                                            ? 'bg-white text-gray-900 shadow-sm' 
+                                            : 'text-gray-500 hover:text-gray-700'
                                     }`}
                                 >
-                                    <Grid className="w-4 h-4" />
+                                    <Grid3X3 className="w-4 h-4" />
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
-                                    className={`p-2 rounded-md transition-colors ${
+                                    className={`p-1.5 rounded-md transition-colors ${
                                         viewMode === 'list' 
-                                            ? 'bg-purple-600 text-white' 
-                                            : 'text-gray-400 hover:text-white'
+                                            ? 'bg-white text-gray-900 shadow-sm' 
+                                            : 'text-gray-500 hover:text-gray-700'
                                     }`}
                                 >
                                     <List className="w-4 h-4" />
                                 </button>
                             </div>
 
-                            {/* Create Buttons */}
+                            {/* Action Buttons */}
                             <button
                                 onClick={() => setShowAIModal(true)}
-                                className="flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105"
+                                className="flex items-center space-x-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                             >
-                                <Sparkles className="w-5 h-5" />
+                                <Sparkles className="w-4 h-4" />
                                 <span>AI Note</span>
                             </button>
                             
                             <button
                                 onClick={handleCreateNote}
-                                className="flex items-center space-x-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 transform hover:scale-105"
+                                className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                             >
-                                <Plus className="w-5 h-5" />
+                                <Plus className="w-4 h-4" />
                                 <span>New Note</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Notes Grid/List */}
+                {/* Notes */}
                 {filteredNotes.length === 0 ? (
                     <div className="text-center py-16">
-                        <BookOpen className="w-24 h-24 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-2xl font-semibold text-white mb-2">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <BookOpen className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
                             {searchTerm || filterCategory !== 'all' ? 'No notes found' : 'No notes yet'}
                         </h3>
-                        <p className="text-gray-400 mb-8">
+                        <p className="text-gray-500 mb-8 max-w-sm mx-auto">
                             {searchTerm || filterCategory !== 'all' 
                                 ? 'Try adjusting your search or filter criteria'
-                                : 'Create your first note to get started'
+                                : 'Create your first note to get started with organizing your thoughts'
                             }
                         </p>
                         {!searchTerm && filterCategory === 'all' && (
-                            <div className="flex justify-center space-x-4">
+                            <div className="flex justify-center space-x-3">
                                 <button
                                     onClick={handleCreateNote}
-                                    className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                                    className="flex items-center space-x-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                                 >
-                                    <Plus className="w-5 h-5" />
+                                    <Plus className="w-4 h-4" />
                                     <span>Create Note</span>
                                 </button>
                                 <button
                                     onClick={() => setShowAIModal(true)}
-                                    className="flex items-center space-x-2 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
+                                    className="flex items-center space-x-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                                 >
-                                    <Sparkles className="w-5 h-5" />
-                                    <span>Generate AI Note</span>
+                                    <Sparkles className="w-4 h-4" />
+                                    <span>Generate with AI</span>
                                 </button>
                             </div>
                         )}
@@ -294,8 +319,8 @@ export default function Home() {
                 ) : (
                     <div className={
                         viewMode === 'grid' 
-                            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-                            : 'space-y-4'
+                            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+                            : 'space-y-3'
                     }>
                         {filteredNotes.map(note => (
                             <NoteCard

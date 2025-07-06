@@ -1,40 +1,8 @@
-// import { useState } from 'react';
-
-// import { useNavigate } from 'react-router-dom';
-
-// export default function Register() {
-//     const [username, setUsername] = useState('');
-//     const [email, setEmail] = useState('');
-//     const [password, setPassword] = useState('');
-//     const navigate = useNavigate();
-
-//     const handleSubmit = async (e) => {
-//         e.preventDefault();
-//         try {
-//             await axiosInstance.post('/auth/register', { username, email, password });
-//             navigate('/login');
-//         } catch (err) {
-//             alert(err.response?.data?.message || 'Registration Failed');
-//         }
-//     };
-
-//     return (
-//         <div className="flex justify-center items-center h-screen bg-gray-100">
-//             <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md w-80">
-//                 <h2 className="text-2xl mb-4 font-bold text-center">Register</h2>
-//                 <input type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-2 mb-3 border rounded" required />
-//                 <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-2 mb-3 border rounded" required />
-//                 <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 mb-3 border rounded" required />
-//                 <button type="submit" className="w-full bg-green-500 text-white p-2 rounded">Register</button>
-//             </form>
-//         </div>
-//     );
-// }
-
 import { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, Brain, Sparkles, Check } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, BookOpen, Mail, Lock, User } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
-import { useNavigate } from 'react-router-dom';
+
 export default function Register() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -42,48 +10,8 @@ export default function Register() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [passwordStrength, setPasswordStrength] = useState(0);
+    
     const navigate = useNavigate();
-
-    const checkPasswordStrength = (password) => {
-        let strength = 0;
-        if (password.length >= 8) strength++;
-        if (/[a-z]/.test(password)) strength++;
-        if (/[A-Z]/.test(password)) strength++;
-        if (/[0-9]/.test(password)) strength++;
-        if (/[^A-Za-z0-9]/.test(password)) strength++;
-        return strength;
-    };
-
-    const handlePasswordChange = (e) => {
-        const newPassword = e.target.value;
-        setPassword(newPassword);
-        setPasswordStrength(checkPasswordStrength(newPassword));
-    };
-
-    const getPasswordStrengthText = () => {
-        switch (passwordStrength) {
-            case 0:
-            case 1: return 'Very Weak';
-            case 2: return 'Weak';
-            case 3: return 'Fair';
-            case 4: return 'Good';
-            case 5: return 'Strong';
-            default: return '';
-        }
-    };
-
-    const getPasswordStrengthColor = () => {
-        switch (passwordStrength) {
-            case 0:
-            case 1: return 'bg-red-500';
-            case 2: return 'bg-orange-500';
-            case 3: return 'bg-yellow-500';
-            case 4: return 'bg-blue-500';
-            case 5: return 'bg-green-500';
-            default: return 'bg-gray-300';
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -102,138 +30,132 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Animated Background Elements */}
-            <div className="absolute inset-0 opacity-10">
-                <div className="absolute top-10 left-10 w-72 h-72 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-                <div className="absolute top-32 right-10 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
-                <div className="absolute bottom-10 left-32 w-72 h-72 bg-teal-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
-            </div>
-
-            {/* Floating Icons */}
-            <div className="absolute inset-0 pointer-events-none">
-                <Sparkles className="absolute top-20 left-1/4 w-6 h-6 text-white/20 animate-bounce" style={{animationDelay: '0s'}} />
-                <Sparkles className="absolute top-40 right-1/4 w-4 h-4 text-emerald-300/30 animate-bounce" style={{animationDelay: '1s'}} />
-                <Sparkles className="absolute bottom-40 left-1/3 w-5 h-5 text-cyan-300/25 animate-bounce" style={{animationDelay: '2s'}} />
-                <Check className="absolute top-60 right-1/3 w-5 h-5 text-teal-300/25 animate-bounce" style={{animationDelay: '3s'}} />
-            </div>
-
-            <div className="relative z-10 w-full max-w-md">
-                {/* Logo/Brand Section */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl mb-4 shadow-2xl">
-                        <Brain className="w-10 h-10 text-white" />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8">
+                {/* Header */}
+                <div className="text-center">
+                    <div className="mx-auto w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mb-4">
+                        <BookOpen className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-4xl font-bold text-white mb-2">Join AI Notes</h1>
-                    <p className="text-emerald-200 text-lg">Create your intelligent workspace</p>
+                    <h2 className="text-3xl font-bold text-gray-900">Create your account</h2>
+                    <p className="mt-2 text-gray-600">Join us and start organizing your thoughts</p>
                 </div>
 
-                {/* Registration Form */}
-                <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/20">
+                {/* Form */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-white font-semibold text-sm">Username</label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-300 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white placeholder-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
-                                    placeholder="Choose a username"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-white font-semibold text-sm">Email Address</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-300 w-5 h-5" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white placeholder-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
-                                    placeholder="Enter your email"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-white font-semibold text-sm">Password</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-emerald-300 w-5 h-5" />
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={handlePasswordChange}
-                                    className="w-full pl-12 pr-12 py-3 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white placeholder-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
-                                    placeholder="Create a strong password"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-emerald-300 hover:text-white transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                </button>
-                            </div>
-                            
-                            {/* Password Strength Indicator */}
-                            {password && (
-                                <div className="mt-2">
-                                    <div className="flex items-center space-x-2">
-                                        <div className="flex-1 bg-white/20 rounded-full h-2 overflow-hidden">
-                                            <div 
-                                                className={`h-full ${getPasswordStrengthColor()} transition-all duration-300`}
-                                                style={{ width: `${(passwordStrength / 5) * 100}%` }}
-                                            ></div>
-                                        </div>
-                                        <span className="text-emerald-200 text-xs font-medium">
-                                            {getPasswordStrengthText()}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
                         {error && (
-                            <div className="bg-red-500/20 backdrop-blur-sm border border-red-400/30 rounded-xl p-3 text-red-100 text-sm">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
                                 {error}
                             </div>
                         )}
 
+                        {/* Username Field */}
+                        <div>
+                            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                                Username
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <User className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input
+                                    id="username"
+                                    name="username"
+                                    type="text"
+                                    autoComplete="username"
+                                    required
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Enter your username"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Email Field */}
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                                Email address
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Mail className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    autoComplete="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Enter your email"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Password Field */}
+                        <div>
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                                Password
+                            </label>
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-gray-400" />
+                                </div>
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    autoComplete="new-password"
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="Create a password"
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                    ) : (
+                                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Submit Button */}
                         <button
                             type="submit"
-                            onClick={handleSubmit}
                             disabled={isLoading}
-                            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {isLoading ? (
-                                <div className="flex items-center justify-center space-x-2">
-                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    <span>Creating account...</span>
-                                </div>
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                'Create Account'
+                                'Create account'
                             )}
                         </button>
-
-                        
                     </form>
-                </div>
 
-                {/* Login Link */}
-                <div className="text-center mt-8">
-                    <p className="text-emerald-200">
-                        Already have an account?{' '}
-                        <a href="/login" className="text-white font-semibold hover:text-emerald-200 transition-colors">
-                            Sign in here
-                        </a>
-                    </p>
+                    {/* Footer */}
+                    <div className="mt-6 text-center">
+                        <p className="text-sm text-gray-600">
+                            Already have an account?{' '}
+                            <Link
+                                to="/login"
+                                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                            >
+                                Sign in
+                            </Link>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

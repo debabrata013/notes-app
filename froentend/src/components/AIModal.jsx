@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { 
     X, 
     Sparkles, 
-    Send, 
     Lightbulb, 
     BookOpen, 
     Briefcase, 
@@ -77,9 +76,7 @@ export default function AIModal({ isOpen, onClose, onSave }) {
         "Draft meeting notes for a project kickoff meeting",
         "Explain the basics of machine learning for beginners",
         "Create a creative story about time travel",
-        "Write a guide on healthy eating habits",
-        "Summarize the main points of effective communication",
-        "Create notes about the history of artificial intelligence"
+        "Write a guide on healthy eating habits"
     ];
 
     const handleSuggestionClick = (suggestion) => {
@@ -90,22 +87,22 @@ export default function AIModal({ isOpen, onClose, onSave }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-700">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
-                            <Sparkles className="w-6 h-6 text-white" />
+                        <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-semibold text-white">AI Note Generator</h2>
-                            <p className="text-sm text-gray-400">Let AI create intelligent notes for you</p>
+                            <h2 className="text-lg font-semibold text-gray-900">AI Note Generator</h2>
+                            <p className="text-sm text-gray-500">Let AI create intelligent notes for you</p>
                         </div>
                     </div>
                     
                     <button
                         onClick={onClose}
-                        className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -115,14 +112,14 @@ export default function AIModal({ isOpen, onClose, onSave }) {
                 <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {error && (
-                            <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-red-400">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
                                 {error}
                             </div>
                         )}
 
                         {/* Note Type Selection */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
                                 Choose Note Type
                             </label>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -133,17 +130,17 @@ export default function AIModal({ isOpen, onClose, onSave }) {
                                             key={type.type}
                                             type="button"
                                             onClick={() => setNoteType(type.type)}
-                                            className={`p-4 rounded-xl border-2 transition-all text-left ${
+                                            className={`p-4 rounded-lg border-2 transition-all text-left ${
                                                 noteType === type.type
-                                                    ? 'border-purple-500 bg-purple-500/20 text-white'
-                                                    : 'border-gray-600 bg-gray-800/50 text-gray-300 hover:border-gray-500'
+                                                    ? 'border-purple-500 bg-purple-50 text-purple-900'
+                                                    : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                                             }`}
                                         >
                                             <div className="flex items-center space-x-3 mb-2">
                                                 <IconComponent className="w-5 h-5" />
                                                 <span className="font-medium">{type.name}</span>
                                             </div>
-                                            <p className="text-sm text-gray-400">{type.description}</p>
+                                            <p className="text-sm text-gray-500">{type.description}</p>
                                         </button>
                                     );
                                 })}
@@ -152,14 +149,14 @@ export default function AIModal({ isOpen, onClose, onSave }) {
 
                         {/* Prompt Input */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
                                 What would you like me to write about?
                             </label>
                             <textarea
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
                                 rows={4}
-                                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                                 placeholder="Describe what you want the AI to write about. Be as specific as possible for better results..."
                                 required
                             />
@@ -167,7 +164,7 @@ export default function AIModal({ isOpen, onClose, onSave }) {
 
                         {/* Prompt Suggestions */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-3">
+                            <label className="block text-sm font-medium text-gray-700 mb-3">
                                 Or try these suggestions:
                             </label>
                             <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto">
@@ -176,7 +173,7 @@ export default function AIModal({ isOpen, onClose, onSave }) {
                                         key={index}
                                         type="button"
                                         onClick={() => handleSuggestionClick(suggestion)}
-                                        className="text-left p-3 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors border border-gray-700 hover:border-gray-600"
+                                        className="text-left p-3 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200 hover:border-gray-300"
                                     >
                                         {suggestion}
                                     </button>
@@ -186,16 +183,16 @@ export default function AIModal({ isOpen, onClose, onSave }) {
 
                         {/* Options */}
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl">
+                            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                                 <div>
-                                    <h4 className="text-white font-medium">Auto-generate title</h4>
-                                    <p className="text-sm text-gray-400">Let AI create a suitable title for your note</p>
+                                    <h4 className="text-gray-900 font-medium">Auto-generate title</h4>
+                                    <p className="text-sm text-gray-500">Let AI create a suitable title for your note</p>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => setAutoTitle(!autoTitle)}
                                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                        autoTitle ? 'bg-purple-600' : 'bg-gray-600'
+                                        autoTitle ? 'bg-purple-600' : 'bg-gray-300'
                                     }`}
                                 >
                                     <span
@@ -208,27 +205,27 @@ export default function AIModal({ isOpen, onClose, onSave }) {
                         </div>
 
                         {/* Submit Button */}
-                        <div className="flex justify-end space-x-4">
+                        <div className="flex justify-end space-x-3">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-6 py-3 text-gray-400 hover:text-white transition-colors"
+                                className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading || !prompt.trim()}
-                                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? (
                                     <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         <span>Generating...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <Wand2 className="w-5 h-5" />
+                                        <Wand2 className="w-4 h-4" />
                                         <span>Generate AI Note</span>
                                     </>
                                 )}

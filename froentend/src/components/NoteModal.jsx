@@ -7,7 +7,6 @@ import {
     Star, 
     Sparkles,
     Calendar,
-    User,
     Tag,
     Copy,
     Download
@@ -67,7 +66,6 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
     const handleCopyContent = async () => {
         try {
             await navigator.clipboard.writeText(note.content);
-            // You could add a toast notification here
         } catch (error) {
             console.error('Failed to copy content:', error);
         }
@@ -108,29 +106,25 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-gray-700">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-700">
+                <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div className="flex items-center space-x-3">
-                        {mode === 'view' && <Eye className="w-6 h-6 text-blue-400" />}
-                        {mode === 'edit' && <Edit3 className="w-6 h-6 text-green-400" />}
-                        {mode === 'create' && <Edit3 className="w-6 h-6 text-purple-400" />}
+                        {mode === 'view' && <Eye className="w-5 h-5 text-blue-600" />}
+                        {mode === 'edit' && <Edit3 className="w-5 h-5 text-green-600" />}
+                        {mode === 'create' && <Edit3 className="w-5 h-5 text-blue-600" />}
                         
-                        <h2 className="text-xl font-semibold text-white">
+                        <h2 className="text-lg font-semibold text-gray-900">
                             {mode === 'view' && 'View Note'}
                             {mode === 'edit' && 'Edit Note'}
                             {mode === 'create' && 'Create New Note'}
                         </h2>
                         
                         {note?.is_ai_generated && (
-                            <div className="flex items-center space-x-1 px-2 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm border border-purple-500/30">
+                            <div className="flex items-center space-x-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
                                 <Sparkles className="w-4 h-4" />
                                 <span>AI Generated</span>
                             </div>
-                        )}
-                        
-                        {note?.is_favorite && (
-                            <Star className="w-5 h-5 text-yellow-400 fill-current" />
                         )}
                     </div>
                     
@@ -139,14 +133,14 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                             <>
                                 <button
                                     onClick={handleCopyContent}
-                                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                     title="Copy Content"
                                 >
                                     <Copy className="w-5 h-5" />
                                 </button>
                                 <button
                                     onClick={handleDownload}
-                                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                                     title="Download Note"
                                 >
                                     <Download className="w-5 h-5" />
@@ -156,7 +150,7 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                         
                         <button
                             onClick={onClose}
-                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -168,8 +162,8 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                     {mode === 'view' ? (
                         <div className="space-y-6">
                             {/* Note Metadata */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-800/50 rounded-xl">
-                                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-2 text-sm text-gray-600">
                                     <Calendar className="w-4 h-4" />
                                     <div>
                                         <p className="font-medium">Created</p>
@@ -178,7 +172,7 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                                 </div>
                                 
                                 {note.updated_at !== note.created_at && (
-                                    <div className="flex items-center space-x-2 text-sm text-gray-300">
+                                    <div className="flex items-center space-x-2 text-sm text-gray-600">
                                         <Calendar className="w-4 h-4" />
                                         <div>
                                             <p className="font-medium">Updated</p>
@@ -187,7 +181,7 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                                     </div>
                                 )}
                                 
-                                <div className="flex items-center space-x-2 text-sm text-gray-300">
+                                <div className="flex items-center space-x-2 text-sm text-gray-600">
                                     <Tag className="w-4 h-4" />
                                     <div>
                                         <p className="font-medium">Category</p>
@@ -198,12 +192,12 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                             
                             {/* Note Title */}
                             <div>
-                                <h1 className="text-3xl font-bold text-white mb-4">{note.title}</h1>
+                                <h1 className="text-2xl font-bold text-gray-900 mb-4">{note.title}</h1>
                             </div>
                             
                             {/* Note Content */}
-                            <div className="prose prose-invert max-w-none">
-                                <div className="text-gray-300 whitespace-pre-wrap leading-relaxed">
+                            <div className="prose max-w-none">
+                                <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">
                                     {note.content}
                                 </div>
                             </div>
@@ -211,21 +205,21 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {error && (
-                                <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 text-red-400">
+                                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
                                     {error}
                                 </div>
                             )}
                             
                             {/* Title Input */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Title
                                 </label>
                                 <input
                                     type="text"
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                     placeholder="Enter note title..."
                                     required
                                 />
@@ -233,13 +227,13 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                             
                             {/* Category Select */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Category
                                 </label>
                                 <select
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 appearance-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
                                 >
                                     {categories.map(category => (
                                         <option key={category.value} value={category.value}>
@@ -251,37 +245,37 @@ export default function NoteModal({ isOpen, onClose, note, mode, onSave }) {
                             
                             {/* Content Textarea */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Content
                                 </label>
                                 <textarea
                                     value={formData.content}
                                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                                     rows={12}
-                                    className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                                     placeholder="Write your note content here..."
                                     required
                                 />
                             </div>
                             
                             {/* Submit Button */}
-                            <div className="flex justify-end space-x-4">
+                            <div className="flex justify-end space-x-3">
                                 <button
                                     type="button"
                                     onClick={onClose}
-                                    className="px-6 py-3 text-gray-400 hover:text-white transition-colors"
+                                    className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {loading ? (
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
-                                        <Save className="w-5 h-5" />
+                                        <Save className="w-4 h-4" />
                                     )}
                                     <span>{loading ? 'Saving...' : 'Save Note'}</span>
                                 </button>
