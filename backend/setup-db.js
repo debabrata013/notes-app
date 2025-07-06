@@ -16,9 +16,14 @@ async function setupDatabase() {
 
         console.log(`Connected to MySQL database: ${dbName}`);
 
+        // Drop existing tables to recreate with correct schema
+        console.log('Dropping existing tables...');
+        await connection.execute('DROP TABLE IF EXISTS notes');
+        await connection.execute('DROP TABLE IF EXISTS users');
+
         // Create users table
         const createUsersTable = `
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(50) NOT NULL UNIQUE,
                 email VARCHAR(100) NOT NULL UNIQUE,
@@ -29,26 +34,34 @@ async function setupDatabase() {
         `;
         
         await connection.execute(createUsersTable);
-        console.log('Users table created or already exists');
+        console.log('Users table created successfully');
 
-        // Create notes table
+        // Create notes table with correct column names
         const createNotesTable = `
-            CREATE TABLE IF NOT EXISTS notes (
+            CREATE TABLE notes (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 title VARCHAR(255) NOT NULL,
                 content TEXT,
                 category VARCHAR(50) DEFAULT 'general',
-                tags JSON,
+                is_ai_generated BOOLEAN DEFAULT FALSE,
+                note_type VARCHAR(50) DEFAULT 'general',
+                original_prompt TEXT,
+                improvement_type VARCHAR(50),
                 is_favorite BOOLEAN DEFAULT FALSE,
+                title_generated BOOLEAN DEFAULT FALSE,
+                last_improved TIMESTAMP NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                INDEX idx_user_id (user_id),
+                INDEX idx_created_at (created_at),
+                INDEX idx_is_ai_generated (is_ai_generated)
             )
         `;
         
         await connection.execute(createNotesTable);
-        console.log('Notes table created or already exists');
+        console.log('Notes table created successfully');
 
         console.log('Database setup completed successfully! 🎉');
 
