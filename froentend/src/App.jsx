@@ -3,18 +3,21 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import { useAuth } from './context/AuthContext';
+import { ToastProvider } from './components/Toast';
 
 function App() {
     const { user } = useAuth();
 
     return (
-        <Router>
-            <Routes>
-                <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-                <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-                <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
-            </Routes>
-        </Router>
+        <ToastProvider>
+            <Router>
+                <Routes>
+                    <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+                    <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+                    <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
+                </Routes>
+            </Router>
+        </ToastProvider>
     );
 }
 
