@@ -18,7 +18,9 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const authRoutes = require('./routes/auth-simple');
+const authRoutes = require('./routes/auth');
+const notesRoutes = require('./routes/notes');
+const aiNotesRoutes = require('./routes/aiNotes');
 
 const app = express();
 
@@ -44,6 +46,23 @@ app.get('/api/test', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/notes', notesRoutes);
+app.use('/api/ai-notes', aiNotesRoutes);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({ 
+        message: 'Internal server error',
+        error: err.message 
+    });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+    console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({ message: 'Route not found' });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
