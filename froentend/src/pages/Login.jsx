@@ -34,6 +34,9 @@
 
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, Brain, Sparkles } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -41,6 +44,8 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -48,17 +53,11 @@ export default function Login() {
         setError('');
         
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // Your actual API call would go here
-            // const res = await axiosInstance.post('/auth/login', { email, password });
-            // login({ email }, res.data.token);
-            // navigate('/');
-            
-            console.log('Login successful!');
+            const res = await axiosInstance.post('/auth/login', { email, password });
+            login({ email }, res.data.token);
+            navigate('/');
         } catch (err) {
-            setError('Invalid credentials. Please try again.');
+            setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -166,18 +165,7 @@ export default function Login() {
                 </div>
             </div>
 
-            <style jsx>{`
-                @keyframes pulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.05); }
-                }
-                .animation-delay-2000 {
-                    animation-delay: 2s;
-                }
-                .animation-delay-4000 {
-                    animation-delay: 4s;
-                }
-            `}</style>
+
         </div>
     );
 }

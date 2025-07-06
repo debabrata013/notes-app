@@ -4,31 +4,38 @@ const User = require('../models/userModel');
 
 const registerUser = async (req, res) => {
     try {
+        console.log('Register request received:', req.body);
         const { username, email, password } = req.body;
 
         // Validate input
         if (!username || !email || !password) {
+            console.log('Validation failed: Missing required fields');
             return res.status(400).json({ 
                 message: 'Username, email, and password are required' 
             });
         }
 
         // Check if user already exists
+        console.log('Checking if user exists with email:', email);
         const existingUser = await User.existsByEmail(email);
         if (existingUser) {
+            console.log('User already exists with email:', email);
             return res.status(400).json({ message: 'User already exists with this email' });
         }
 
         // Hash password
+        console.log('Hashing password...');
         const hashedPassword = await bcrypt.hash(password, 12);
 
         // Create user
+        console.log('Creating new user...');
         const newUser = await User.create({
             username,
             email,
             password: hashedPassword
         });
 
+        console.log('User created successfully:', newUser);
         res.status(201).json({ 
             message: 'User registered successfully', 
             user: {

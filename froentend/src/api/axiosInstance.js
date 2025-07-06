@@ -1,13 +1,11 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-    baseURL: 'http://localhost:5000/api', // Backend Base URL
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    baseURL: '/api', // Use proxy instead of direct URL
+    withCredentials: true
 });
 
-// JWT Token Set Karne Ke Liye
+// JWT Token Attach Automatically
 axiosInstance.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {

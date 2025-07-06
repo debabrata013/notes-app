@@ -1,5 +1,5 @@
 // import { useState } from 'react';
-// import axiosInstance from '../api/axiosInstance';
+
 // import { useNavigate } from 'react-router-dom';
 
 // export default function Register() {
@@ -33,7 +33,8 @@
 
 import { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, Brain, Sparkles, Check } from 'lucide-react';
-
+import axiosInstance from '../api/axiosInstance';
+import { useNavigate } from 'react-router-dom';
 export default function Register() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
@@ -42,6 +43,7 @@ export default function Register() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [passwordStrength, setPasswordStrength] = useState(0);
+    const navigate = useNavigate();
 
     const checkPasswordStrength = (password) => {
         let strength = 0;
@@ -89,16 +91,19 @@ export default function Register() {
         setError('');
         
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            // Your actual API call would go here
-            await axiosInstance.post('/auth/register', { username, email, password });
+            // Your actual API call
+            const userData = { username, email, password };
+            await axiosInstance.post('/auth/register', userData, {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
             navigate('/login');
             
             console.log('Registration successful!');
         } catch (err) {
-            setError('Registration failed. Please try again.');
+            setError(err.response?.data?.message || 'Registration failed. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -133,7 +138,7 @@ export default function Register() {
 
                 {/* Registration Form */}
                 <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-white/20">
-                    <div className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-white font-semibold text-sm">Username</label>
                             <div className="relative">
@@ -209,9 +214,11 @@ export default function Register() {
                             </div>
                         )}
 
-                        <div
+                        <button
+                            type="submit"
                             onClick={handleSubmit}
-                            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer text-center"
+                            disabled={isLoading}
+                            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer text-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isLoading ? (
                                 <div className="flex items-center justify-center space-x-2">
@@ -221,10 +228,10 @@ export default function Register() {
                             ) : (
                                 'Create Account'
                             )}
-                        </div>
+                        </button>
 
                         
-                    </div>
+                    </form>
                 </div>
 
                 {/* Login Link */}
@@ -237,19 +244,6 @@ export default function Register() {
                     </p>
                 </div>
             </div>
-
-            <style jsx>{`
-                @keyframes pulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.05); }
-                }
-                .animation-delay-2000 {
-                    animation-delay: 2s;
-                }
-                .animation-delay-4000 {
-                    animation-delay: 4s;
-                }
-            `}</style>
         </div>
     );
 }
