@@ -1,126 +1,119 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-require('dotenv').config();
 
 class GeminiService {
     constructor() {
+        if (!process.env.GEMINI_API_KEY) {
+            console.warn('GEMINI_API_KEY not found in environment variables');
+            this.genAI = null;
+            return;
+        }
+        
         this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+        // Updated model name for current API version
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     }
 
     async generateNote(prompt, noteType = 'general') {
         try {
-            let enhancedPrompt;
-
-            switch (noteType) {
-                case 'summary':
-                    enhancedPrompt = `Create a well-structured summary note about: ${prompt}. 
-                    Include key points, important details, and organize it in a clear format with headings and bullet points.`;
-                    break;
-                
-                case 'study':
-                    enhancedPrompt = `Create comprehensive study notes about: ${prompt}. 
-                    Include definitions, key concepts, examples, and organize it for easy learning and revision.`;
-                    break;
-                
-                case 'meeting':
-                    enhancedPrompt = `Create professional meeting notes about: ${prompt}. 
-                    Include agenda items, key decisions, action items, and next steps in a structured format.`;
-                    break;
-                
-                case 'creative':
-                    enhancedPrompt = `Write creative and engaging notes about: ${prompt}. 
-                    Make it interesting, add relevant examples, and present it in an engaging format.`;
-                    break;
-                
-                default:
-                    enhancedPrompt = `Create well-organized notes about: ${prompt}. 
-                    Structure the content clearly with appropriate headings and bullet points.`;
+            if (!this.genAI) {
+                return {
+                    success: false,
+                    error: 'Gemini API not configured'
+                };
             }
 
-            const result = await this.model.generateContent(enhancedPrompt);
+            const typePrompts = {
+                general: `Create a well-organized note about: ${prompt}. Make it informative and easy to read.`,
+                summary: `Create a structured summary with key points about: ${prompt}. Use bullet points and clear headings.`,
+                study: `Create comprehensive study notes about: ${prompt}. Include definitions, examples, and key concepts.`,
+                meeting: `Create professional meeting notes about: ${prompt}. Include agenda items, discussion points, and action items.`,
+                creative: `Create an engaging and creative note about: ${prompt}. Make it interesting and visually appealing with good formatting.`
+            };
+
+            const fullPrompt = typePrompts[noteType] || typePrompts.general;
+            
+            const result = await this.model.generateContent(fullPrompt);
             const response = await result.response;
-            const text = response.text();
+            const content = response.text();
 
             return {
                 success: true,
-                content: text,
-                type: noteType
+                content: content.trim()
             };
 
         } catch (error) {
-            console.error('Gemini API Error:', error);
+            console.error('Gemini Generate Note Error:', error);
             return {
                 success: false,
-                error: 'Failed to generate note content',
-                details: error.message
-            };
-        }
-    }
-
-    async improveNote(existingContent, improvementType = 'enhance') {
-        try {
-            let prompt;
-
-            switch (improvementType) {
-                case 'enhance':
-                    prompt = `Improve and enhance the following notes by adding more detail, better structure, and clarity: ${existingContent}`;
-                    break;
-                
-                case 'summarize':
-                    prompt = `Summarize the following notes into key points while maintaining important information: ${existingContent}`;
-                    break;
-                
-                case 'expand':
-                    prompt = `Expand the following notes with more detailed explanations, examples, and additional relevant information: ${existingContent}`;
-                    break;
-                
-                case 'restructure':
-                    prompt = `Restructure and reorganize the following notes for better readability and logical flow: ${existingContent}`;
-                    break;
-                
-                default:
-                    prompt = `Improve the following notes: ${existingContent}`;
-            }
-
-            const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
-
-            return {
-                success: true,
-                content: text,
-                improvementType
-            };
-
-        } catch (error) {
-            console.error('Gemini API Error:', error);
-            return {
-                success: false,
-                error: 'Failed to improve note content',
-                details: error.message
+                error: error.message || 'Failed to generate note'
             };
         }
     }
 
     async generateTitle(content) {
         try {
-            const prompt = `Generate a concise and descriptive title for the following note content (max 10 words): ${content.substring(0, 500)}`;
+            if (!this.genAI) {
+                return {
+                    success: false,
+                    error: 'Gemini API not configured'
+                };
+            }
+
+            const prompt = `Generate a concise, descriptive title (maximum 60 characters) for this note content: ${content.substring(0, 500)}...`;
             
             const result = await this.model.generateContent(prompt);
             const response = await result.response;
             const title = response.text().trim();
 
+            // Remove quotes if present
+            const cleanTitle = title.replace(/^["']|["']$/g, '');
+
             return {
                 success: true,
-                title: title.replace(/['"]/g, '') // Remove quotes if any
+                title: cleanTitle.substring(0, 60) // Ensure max length
             };
 
         } catch (error) {
-            console.error('Gemini API Error:', error);
+            console.error('Gemini Generate Title Error:', error);
             return {
                 success: false,
-                error: 'Failed to generate title',
-                title: 'Untitled Note'
+                error: error.message || 'Failed to generate title'
+            };
+        }
+    }
+
+    async improveNote(content, improvementType = 'enhance') {
+        try {
+            if (!this.genAI) {
+                return {
+                    success: false,
+                    error: 'Gemini API not configured'
+                };
+            }
+
+            const improvementPrompts = {
+                enhance: `Improve and enhance this note content while keeping the original meaning. Make it more detailed, well-structured, and informative: ${content}`,
+                summarize: `Create a concise summary of this note content, keeping only the most important points: ${content}`,
+                expand: `Expand this note content with more details, examples, and explanations: ${content}`,
+                restructure: `Restructure this note content with better organization, headings, and formatting: ${content}`
+            };
+
+            const prompt = improvementPrompts[improvementType] || improvementPrompts.enhance;
+            
+            const result = await this.model.generateContent(prompt);
+            const response = await result.response;
+            const improvedContent = response.text();
+
+            return {
+                success: true,
+                content: improvedContent.trim()
+            };
+
+        } catch (error) {
+            console.error('Gemini Improve Note Error:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to improve note'
             };
         }
     }
