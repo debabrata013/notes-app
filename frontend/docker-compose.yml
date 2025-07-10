@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  ai-notes-web:
+    image: debabratap/ai-notes-web:latest
+    container_name: ai-notes-web
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - ai-notes-network
+
+networks:
+  ai-notes-network:
+    driver: bridge

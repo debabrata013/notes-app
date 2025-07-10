@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+        DOCKER_IMAGE = 'debabratap/ai-notes-web'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def image = docker.build("${DOCKER_IMAGE}:${BUILD_NUMBER}")
+                    docker.withRegistry('https://registry-1.docker.io/v2/', 'docker-hub-credentials') {
+                        image.push()
+                        image.push('latest')
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            sh 'docker image prune -f'
+        }
+    }
+}

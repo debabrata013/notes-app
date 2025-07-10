@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  ai-notes-web-staging:
+    image: debabratap/ai-notes-web:${BUILD_NUMBER:-latest}
+    container_name: ai-notes-web-staging
+    ports:
+      - "3001:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=staging
+      - API_URL=http://staging-api.example.com
+    networks:
+      - ai-notes-staging-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai-notes-staging.rule=Host(`staging.ai-notes.example.com`)"
+      - "traefik.http.services.ai-notes-staging.loadbalancer.server.port=80"
+
+networks:
+  ai-notes-staging-network:
+    driver: bridge

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  frontend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev  # You'll need to create this
+      args:
+        - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:5000}
+    ports:
+      - "5173:5173"  # Vite dev server port
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL:-http://localhost:5000}
+    volumes:
+      - .:/app
+      - /app/node_modules  # Prevent overwriting node_modules
+    container_name: ai-notes-frontend-dev
+    restart: unless-stopped
+    networks:
+      - app-network
+    command: npm run dev -- --host 0.0.0.0
+
+networks:
+  app-network:
+    driver: bridge

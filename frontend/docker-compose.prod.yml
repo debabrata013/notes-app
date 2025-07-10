@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  ai-notes-web-prod:
+    image: debabratap/ai-notes-web:${BUILD_NUMBER:-latest}
+    container_name: ai-notes-web-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - API_URL=https://api.ai-notes.example.com
+    networks:
+      - ai-notes-prod-network
+    volumes:
+      - ./ssl:/etc/nginx/ssl:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ai-notes-prod.rule=Host(`ai-notes.example.com`)"
+      - "traefik.http.routers.ai-notes-prod.tls=true"
+      - "traefik.http.routers.ai-notes-prod.tls.certresolver=letsencrypt"
+      - "traefik.http.services.ai-notes-prod.loadbalancer.server.port=80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  ai-notes-prod-network:
+    driver: bridge
