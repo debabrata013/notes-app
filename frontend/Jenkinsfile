@@ -150,7 +150,7 @@ pipeline {
                 echo 'Logging into Docker Hub...'
                 script {
                     // Using Docker Hub credentials stored in Jenkins
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', 
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds-id', 
                                                    usernameVariable: 'DOCKER_USERNAME', 
                                                    passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
@@ -232,7 +232,7 @@ pipeline {
                         docker ps -a | grep ai-notes-test | awk '{print $1}' | xargs docker rm -f || true
                         
                         # Logout from Docker Hub if still logged in
-                        docker logout || true
+                        // docker logout || true
                     '''
                 } catch (Exception e) {
                     echo "Cleanup failed: ${e.getMessage()}"
