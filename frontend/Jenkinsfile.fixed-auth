@@ -1,0 +1,199 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE_NAME = 'debabrata013/ai-notes-web'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        LATEST_TAG = 'latest'
+        FRONTEND_DIR = 'frontend'
+        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.PATH}"
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+        
+        stage('Build App') {
+            steps {
+                echo 'Building React application...'
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        echo "Installing dependencies..."
+                        npm ci
+                        echo "Building application..."
+                        npm run build
+                        echo "Build completed!"
+                        ls -la dist/
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                dir("${FRONTEND_DIR}") {
+                    script {
+                        try {
+                            def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
+                            sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:${LATEST_TAG}"
+                            echo "✅ Docker image built successfully!"
+                            echo "Image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                        } catch (Exception e) {
+                            echo "❌ Docker build failed: ${e.getMessage()}"
+                            throw e
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Docker Hub Authentication Check') {
+            steps {
+                echo 'Checking Docker Hub authentication...'
+                script {
+                    sh '''
+                        echo "Checking current Docker login status..."
+                        docker info | grep Username || echo "⚠️ Not logged into Docker Hub"
+                        
+                        echo "Checking Docker Hub connectivity..."
+                        curl -s https://hub.docker.com/ > /dev/null && echo "✅ Docker Hub accessible" || echo "❌ Docker Hub not accessible"
+                    '''
+                }
+            }
+        }
+        
+        stage('Manual Docker Login') {
+            steps {
+                echo 'Attempting Docker Hub login...'
+                script {
+                    // This will require manual intervention or proper credentials setup
+                    sh '''
+                        echo "=== DOCKER LOGIN REQUIRED ==="
+                        echo "Please ensure Docker Hub login is configured"
+                        echo "Run manually: docker login -u debabrata013"
+                        echo "Or set up Jenkins credentials properly"
+                        echo "================================"
+                        
+                        # Check if already logged in
+                        if docker info | grep -q Username; then
+                            echo "✅ Already logged into Docker Hub"
+                        else
+                            echo "❌ Docker Hub login required"
+                            echo "Attempting login with stored credentials..."
+                            
+                            # This will fail if no credentials are stored
+                            # You need to run 'docker login' manually on Jenkins agent
+                            docker info | grep Username || {
+                                echo "⚠️ WARNING: Docker Hub authentication not configured"
+                                echo "Pipeline will continue but push may fail"
+                            }
+                        fi
+                    '''
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            steps {
+                echo 'Pushing Docker image to Docker Hub...'
+                script {
+                    try {
+                        sh '''
+                            echo "Attempting to push Docker image..."
+                            echo "Image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                            
+                            # Check login status before push
+                            if docker info | grep -q Username; then
+                                echo "✅ Docker Hub authenticated, proceeding with push..."
+                                
+                                echo "Pushing build-specific tag..."
+                                docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
+                                
+                                echo "Pushing latest tag..."
+                                docker push ${DOCKER_IMAGE_NAME}:${LATEST_TAG}
+                                
+                                echo "🎉 Successfully pushed to Docker Hub!"
+                                echo "🔗 View at: https://hub.docker.com/r/debabrata013/ai-notes-web"
+                            else
+                                echo "❌ Docker Hub authentication failed"
+                                echo "Please run: docker login -u debabrata013"
+                                echo "Then re-run this pipeline"
+                                exit 1
+                            fi
+                        '''
+                    } catch (Exception e) {
+                        echo "❌ Docker push failed: ${e.getMessage()}"
+                        echo "This is likely due to authentication issues"
+                        echo "Please ensure Docker Hub login is configured on Jenkins agent"
+                        throw e
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                echo 'Cleaning up...'
+                sh '''
+                    # Clean up old images to save space
+                    docker image prune -f || true
+                    
+                    # Show final status
+                    echo "=== FINAL STATUS ==="
+                    echo "Docker images:"
+                    docker images | grep ai-notes || echo "No ai-notes images found"
+                    echo "Docker Hub login status:"
+                    docker info | grep Username || echo "Not logged into Docker Hub"
+                '''
+            }
+        }
+        
+        success {
+            echo '🎉 Pipeline completed successfully!'
+            script {
+                sh '''
+                    echo "================================"
+                    echo "✅ BUILD SUCCESSFUL!"
+                    echo "================================"
+                    echo "🐳 Docker Image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    echo "🔗 Docker Hub: https://hub.docker.com/r/debabrata013/ai-notes-web"
+                    echo "📦 Latest Tag: ${DOCKER_IMAGE_NAME}:${LATEST_TAG}"
+                    echo "🔢 Build Number: ${BUILD_NUMBER}"
+                    echo "================================"
+                    echo "To deploy locally:"
+                    echo "docker run -d -p 3000:80 ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    echo "================================"
+                '''
+            }
+        }
+        
+        failure {
+            echo '❌ Pipeline failed!'
+            script {
+                sh '''
+                    echo "================================"
+                    echo "❌ BUILD FAILED!"
+                    echo "================================"
+                    echo "Common issues and solutions:"
+                    echo "1. Docker Hub authentication:"
+                    echo "   Run: docker login -u debabrata013"
+                    echo "2. Network connectivity:"
+                    echo "   Check internet connection"
+                    echo "3. Docker Hub repository access:"
+                    echo "   Verify repository exists and you have push access"
+                    echo "================================"
+                    echo "Debug info:"
+                    docker info | grep Username || echo "Not logged into Docker Hub"
+                    docker images | grep ai-notes || echo "No ai-notes images"
+                '''
+            }
+        }
+    }
+}
