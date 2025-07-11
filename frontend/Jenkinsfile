@@ -190,18 +190,7 @@ pipeline {
             }
         }
         
-        stage('Docker Hub Logout') {
-            when {
-                environment name: 'DOCKER_IMAGE_BUILT', value: 'true'
-            }
-            steps {
-                echo 'Logging out from Docker Hub...'
-                sh '''
-                    docker logout
-                    echo "Docker Hub logout successful!"
-                '''
-            }
-        }
+        
         
         stage('Deploy Notification') {
             when {
