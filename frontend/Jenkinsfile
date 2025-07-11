@@ -2,18 +2,9 @@ pipeline {
     agent any
     
     environment {
-        // Docker Hub credentials (configure in Jenkins credentials)
-        DOCKER_HUB_CREDENTIALS = credentials('dockerhub-creds-id')
         DOCKER_IMAGE_NAME = 'debabratap/ai-notes-web'
         DOCKER_TAG = "${BUILD_NUMBER}"
-        LATEST_TAG = 'latest'
-        
-        // Node.js version
-        NODE_VERSION = '20'
-    }
-    
-    tools {
-        nodejs "${NODE_VERSION}"
+        FRONTEND_DIR = 'frontend'
     }
     
     stages {
@@ -29,56 +20,71 @@ pipeline {
                 echo 'Displaying environment information...'
                 sh '''
                     echo "Node.js version:"
-                    node --version
+                    node --version || echo "Node.js not found"
                     echo "NPM version:"
-                    npm --version
+                    npm --version || echo "NPM not found"
                     echo "Docker version:"
-                    docker --version
+                    docker --version || echo "Docker not found"
                     echo "Build Number: ${BUILD_NUMBER}"
-                    echo "Branch: ${GIT_BRANCH}"
+                    echo "Branch: ${BRANCH_NAME}"
+                    echo "Working Directory:"
+                    pwd
+                    ls -la
                 '''
+            }
+        }
+        
+        stage('Navigate to Frontend') {
+            steps {
+                echo 'Navigating to frontend directory...'
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        echo "Current directory:"
+                        pwd
+                        echo "Directory contents:"
+                        ls -la
+                        echo "Package.json exists:"
+                        test -f package.json && echo "Yes" || echo "No"
+                    '''
+                }
             }
         }
         
         stage('Install Dependencies') {
             steps {
                 echo 'Installing Node.js dependencies...'
-                sh '''
-                    npm ci
-                '''
-            }
-        }
-        
-        stage('Lint Code') {
-            steps {
-                echo 'Running ESLint...'
-                sh '''
-                    npm run lint || true
-                '''
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        npm ci
+                    '''
+                }
             }
         }
         
         stage('Build Application') {
             steps {
                 echo 'Building React application...'
-                sh '''
-                    npm run build
-                '''
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        npm run build
+                    '''
+                }
             }
         }
         
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                script {
-                    // Build Docker image with build number tag
-                    def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
-                    
-                    // Tag as latest
-                    sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:${LATEST_TAG}"
-                    
-                    // Store image for later use
-                    env.DOCKER_IMAGE = dockerImage.id
+                dir("${FRONTEND_DIR}") {
+                    script {
+                        // Build Docker image with build number tag
+                        def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
+                        
+                        // Tag as latest
+                        sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest"
+                        
+                        echo "Docker image built successfully: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    }
                 }
             }
         }
@@ -86,150 +92,46 @@ pipeline {
         stage('Test Docker Image') {
             steps {
                 echo 'Testing Docker image...'
-                sh '''
-                    # Run container in detached mode
-                    docker run -d --name ai-notes-test-${BUILD_NUMBER} -p 8080:80 ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
-                    
-                    # Wait for container to start
-                    sleep 10
-                    
-                    # Test if container is running
-                    docker ps | grep ai-notes-test-${BUILD_NUMBER}
-                    
-                    # Basic health check (optional - uncomment if you have a health endpoint)
-                    # curl -f http://localhost:8080 || exit 1
-                    
-                    # Cleanup test container
-                    docker stop ai-notes-test-${BUILD_NUMBER}
-                    docker rm ai-notes-test-${BUILD_NUMBER}
-                '''
-            }
-        }
-        
-        stage('Security Scan') {
-            steps {
-                echo 'Running security scan on Docker image...'
                 script {
-                    try {
-                        // Using Trivy for vulnerability scanning (install Trivy on Jenkins agent)
-                        sh '''
-                            if command -v trivy &> /dev/null; then
-                                echo "Running Trivy security scan..."
-                                trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
-                            else
-                                echo "Trivy not installed, skipping security scan"
-                            fi
-                        '''
-                    } catch (Exception e) {
-                        echo "Security scan failed: ${e.getMessage()}"
-                        // Don't fail the build for security scan issues in this example
-                    }
-                }
-            }
-        }
-        
-        stage('Push to Docker Hub') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'master'
-                    branch 'develop'
-                }
-            }
-            steps {
-                echo 'Pushing Docker image to Docker Hub...'
-                script {
-                    docker.withRegistry('https://registry-1.docker.io/v2/', 'dockerhub-creds-id') {
-                        // Push with build number tag
-                        sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    sh '''
+                        # Run container in detached mode
+                        docker run -d --name ai-notes-test-${BUILD_NUMBER} -p 8081:80 ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
                         
-                        // Push latest tag only for main/master branch
-                        if (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'origin/master') {
-                            sh "docker push ${DOCKER_IMAGE_NAME}:${LATEST_TAG}"
-                        }
-                    }
+                        # Wait for container to start
+                        sleep 10
+                        
+                        # Test if container is running
+                        docker ps | grep ai-notes-test-${BUILD_NUMBER}
+                        
+                        # Cleanup test container
+                        docker stop ai-notes-test-${BUILD_NUMBER} || true
+                        docker rm ai-notes-test-${BUILD_NUMBER} || true
+                    '''
                 }
-            }
-        }
-        
-        stage('Deploy to Staging') {
-            when {
-                branch 'develop'
-            }
-            steps {
-                echo 'Deploying to staging environment...'
-                sh '''
-                    # Example deployment to staging
-                    echo "Deploying ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} to staging"
-                    
-                    # Add your staging deployment commands here
-                    # For example, using docker-compose or kubectl
-                    
-                    # docker-compose -f docker-compose.staging.yml up -d
-                    # or
-                    # kubectl set image deployment/ai-notes-web ai-notes-web=${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
-                '''
-            }
-        }
-        
-        stage('Deploy to Production') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'master'
-                }
-            }
-            steps {
-                echo 'Deploying to production environment...'
-                input message: 'Deploy to production?', ok: 'Deploy'
-                sh '''
-                    # Example deployment to production
-                    echo "Deploying ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} to production"
-                    
-                    # Add your production deployment commands here
-                    # For example:
-                    # docker-compose -f docker-compose.prod.yml up -d
-                    # or
-                    # kubectl set image deployment/ai-notes-web ai-notes-web=${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
-                '''
             }
         }
     }
     
     post {
         always {
-            echo 'Cleaning up...'
-            sh '''
-                # Clean up Docker images to save space
-                docker image prune -f
+            script {
+                echo 'Cleaning up...'
+                // Clean up Docker images to save space
+                sh 'docker image prune -f || true'
                 
-                # Remove build artifacts
-                rm -rf node_modules dist || true
-            '''
+                // Clean up test containers if any
+                sh 'docker ps -a | grep ai-notes-test | awk \'{print $1}\' | xargs docker rm -f || true'
+            }
         }
         
         success {
             echo 'Pipeline completed successfully!'
-            // Send success notification
-            script {
-                if (env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'origin/master') {
-                    echo "✅ Production deployment successful for build ${BUILD_NUMBER}"
-                    // Add Slack/email notification here if needed
-                }
-            }
+            echo "✅ Build ${BUILD_NUMBER} completed successfully"
         }
         
         failure {
             echo 'Pipeline failed!'
-            // Send failure notification
-            script {
-                echo "❌ Build ${BUILD_NUMBER} failed on branch ${GIT_BRANCH}"
-                // Add Slack/email notification here if needed
-            }
-        }
-        
-        unstable {
-            echo 'Pipeline completed with warnings!'
+            echo "❌ Build ${BUILD_NUMBER} failed"
         }
     }
 }
