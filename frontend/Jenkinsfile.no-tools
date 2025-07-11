@@ -1,0 +1,139 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE_NAME = 'debabratap/ai-notes-web'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        FRONTEND_DIR = 'frontend'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+        
+        stage('Environment Info') {
+            steps {
+                echo 'Displaying environment information...'
+                sh '''
+                    echo "System Node.js version:"
+                    /opt/homebrew/bin/node --version || node --version || echo "Node.js not found"
+                    echo "System NPM version:"
+                    /opt/homebrew/bin/npm --version || npm --version || echo "NPM not found"
+                    echo "Docker version:"
+                    docker --version || echo "Docker not found"
+                    echo "Build Number: ${BUILD_NUMBER}"
+                    echo "Branch: ${BRANCH_NAME}"
+                    echo "Working Directory:"
+                    pwd
+                    ls -la
+                '''
+            }
+        }
+        
+        stage('Navigate to Frontend') {
+            steps {
+                echo 'Navigating to frontend directory...'
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        echo "Current directory:"
+                        pwd
+                        echo "Directory contents:"
+                        ls -la
+                        echo "Package.json exists:"
+                        test -f package.json && echo "Yes" || echo "No"
+                    '''
+                }
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installing Node.js dependencies...'
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        export PATH="/opt/homebrew/bin:$PATH"
+                        npm ci
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Application') {
+            steps {
+                echo 'Building React application...'
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        export PATH="/opt/homebrew/bin:$PATH"
+                        npm run build
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                dir("${FRONTEND_DIR}") {
+                    script {
+                        // Build Docker image with build number tag
+                        def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
+                        
+                        // Tag as latest
+                        sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest"
+                        
+                        echo "Docker image built successfully: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    }
+                }
+            }
+        }
+        
+        stage('Test Docker Image') {
+            steps {
+                echo 'Testing Docker image...'
+                script {
+                    sh '''
+                        # Run container in detached mode
+                        docker run -d --name ai-notes-test-${BUILD_NUMBER} -p 8081:80 ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
+                        
+                        # Wait for container to start
+                        sleep 10
+                        
+                        # Test if container is running
+                        docker ps | grep ai-notes-test-${BUILD_NUMBER}
+                        
+                        # Cleanup test container
+                        docker stop ai-notes-test-${BUILD_NUMBER} || true
+                        docker rm ai-notes-test-${BUILD_NUMBER} || true
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                echo 'Cleaning up...'
+                // Clean up Docker images to save space
+                sh 'docker image prune -f || true'
+                
+                // Clean up test containers if any
+                sh 'docker ps -a | grep ai-notes-test | awk \'{print $1}\' | xargs docker rm -f || true'
+            }
+        }
+        
+        success {
+            echo 'Pipeline completed successfully!'
+            echo "✅ Build ${BUILD_NUMBER} completed successfully"
+        }
+        
+        failure {
+            echo 'Pipeline failed!'
+            echo "❌ Build ${BUILD_NUMBER} failed"
+        }
+    }
+}

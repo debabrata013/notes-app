@@ -1,0 +1,101 @@
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_IMAGE_NAME = 'debabratap/ai-notes-web'
+        DOCKER_TAG = "${BUILD_NUMBER}"
+        FRONTEND_DIR = 'frontend'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+        
+        stage('Environment Info') {
+            steps {
+                echo 'Displaying environment information...'
+                sh '''
+                    echo "Checking Node.js installations:"
+                    ls -la /opt/homebrew/bin/node* || echo "No node in /opt/homebrew/bin/"
+                    ls -la /usr/local/bin/node* || echo "No node in /usr/local/bin/"
+                    ls -la /opt/homebrew/bin/npm* || echo "No npm in /opt/homebrew/bin/"
+                    ls -la /usr/local/bin/npm* || echo "No npm in /usr/local/bin/"
+                    
+                    echo "Testing direct paths:"
+                    /opt/homebrew/bin/node --version || echo "Homebrew node not working"
+                    /opt/homebrew/bin/npm --version || echo "Homebrew npm not working"
+                    
+                    echo "Build Number: ${BUILD_NUMBER}"
+                    echo "Working Directory:"
+                    pwd
+                '''
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                echo 'Installing Node.js dependencies...'
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        echo "Using direct npm path..."
+                        /opt/homebrew/bin/npm ci
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Application') {
+            steps {
+                echo 'Building React application...'
+                dir("${FRONTEND_DIR}") {
+                    sh '''
+                        echo "Building with direct npm path..."
+                        /opt/homebrew/bin/npm run build
+                        echo "Build completed, checking dist folder:"
+                        ls -la dist/ || echo "Dist folder not found"
+                    '''
+                }
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+                dir("${FRONTEND_DIR}") {
+                    script {
+                        // Build Docker image with build number tag
+                        def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
+                        
+                        // Tag as latest
+                        sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest"
+                        
+                        echo "Docker image built successfully: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            script {
+                echo 'Cleaning up...'
+                sh 'docker image prune -f || true'
+            }
+        }
+        
+        success {
+            echo 'Pipeline completed successfully!'
+            echo "✅ Build ${BUILD_NUMBER} completed successfully"
+        }
+        
+        failure {
+            echo 'Pipeline failed!'
+            echo "❌ Build ${BUILD_NUMBER} failed"
+        }
+    }
+}
