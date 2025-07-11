@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         // Docker Hub credentials (configure in Jenkins credentials)
-        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+        DOCKER_HUB_CREDENTIALS = credentials('dockerhub-creds-id')
         DOCKER_IMAGE_NAME = 'debabratap/ai-notes-web'
         DOCKER_TAG = "${BUILD_NUMBER}"
         LATEST_TAG = 'latest'
@@ -139,7 +139,7 @@ pipeline {
             steps {
                 echo 'Pushing Docker image to Docker Hub...'
                 script {
-                    docker.withRegistry('https://registry-1.docker.io/v2/', 'docker-hub-credentials') {
+                    docker.withRegistry('https://registry-1.docker.io/v2/', 'dockerhub-creds-id') {
                         // Push with build number tag
                         sh "docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
                         
