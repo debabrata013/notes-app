@@ -2,8 +2,9 @@ pipeline {
     agent any
     
     environment {
-        DOCKER_IMAGE_NAME = 'debabratap/ai-notes-web'
+        DOCKER_IMAGE_NAME = 'debabrata013/ai-notes-web'
         DOCKER_TAG = "${BUILD_NUMBER}"
+        LATEST_TAG = 'latest'
         FRONTEND_DIR = 'frontend'
         // Set PATH to include Homebrew binaries
         PATH = "/opt/homebrew/bin:/usr/local/bin:${env.PATH}"
@@ -93,9 +94,12 @@ pipeline {
                             def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
                             
                             // Tag as latest
-                            sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest"
+                            sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:${LATEST_TAG}"
                             
                             echo "Docker image built successfully: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                            
+                            // Store image reference for later stages
+                            env.DOCKER_IMAGE_BUILT = "true"
                         } catch (Exception e) {
                             echo "Docker build failed: ${e.getMessage()}"
                             throw e
@@ -106,6 +110,9 @@ pipeline {
         }
         
         stage('Test Docker Image') {
+            when {
+                environment name: 'DOCKER_IMAGE_BUILT', value: 'true'
+            }
             steps {
                 echo 'Testing Docker image...'
                 script {
@@ -134,6 +141,91 @@ pipeline {
                 }
             }
         }
+        
+        stage('Docker Hub Login') {
+            when {
+                environment name: 'DOCKER_IMAGE_BUILT', value: 'true'
+            }
+            steps {
+                echo 'Logging into Docker Hub...'
+                script {
+                    // Using Docker Hub credentials stored in Jenkins
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', 
+                                                   usernameVariable: 'DOCKER_USERNAME', 
+                                                   passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh '''
+                            echo "Logging into Docker Hub as ${DOCKER_USERNAME}..."
+                            echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+                            echo "Docker Hub login successful!"
+                        '''
+                    }
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+            when {
+                environment name: 'DOCKER_IMAGE_BUILT', value: 'true'
+            }
+            steps {
+                echo 'Pushing Docker image to Docker Hub...'
+                script {
+                    try {
+                        sh '''
+                            echo "Pushing image with build number tag..."
+                            docker push ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
+                            
+                            echo "Pushing latest tag..."
+                            docker push ${DOCKER_IMAGE_NAME}:${LATEST_TAG}
+                            
+                            echo "Successfully pushed both tags to Docker Hub!"
+                            echo "Image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                            echo "Latest: ${DOCKER_IMAGE_NAME}:${LATEST_TAG}"
+                        '''
+                    } catch (Exception e) {
+                        echo "Docker push failed: ${e.getMessage()}"
+                        throw e
+                    }
+                }
+            }
+        }
+        
+        stage('Docker Hub Logout') {
+            when {
+                environment name: 'DOCKER_IMAGE_BUILT', value: 'true'
+            }
+            steps {
+                echo 'Logging out from Docker Hub...'
+                sh '''
+                    docker logout
+                    echo "Docker Hub logout successful!"
+                '''
+            }
+        }
+        
+        stage('Deploy Notification') {
+            when {
+                environment name: 'DOCKER_IMAGE_BUILT', value: 'true'
+            }
+            steps {
+                echo 'Deployment ready notification...'
+                script {
+                    sh '''
+                        echo "🚀 DEPLOYMENT READY!"
+                        echo "================================"
+                        echo "Docker Image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                        echo "Latest Tag: ${DOCKER_IMAGE_NAME}:${LATEST_TAG}"
+                        echo "Build Number: ${BUILD_NUMBER}"
+                        echo "Branch: ${BRANCH_NAME}"
+                        echo "================================"
+                        echo "To deploy, run:"
+                        echo "docker run -d -p 3000:80 ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                        echo "or"
+                        echo "docker-compose up -d"
+                    '''
+                }
+            }
+        }
     }
     
     post {
@@ -141,13 +233,17 @@ pipeline {
             script {
                 echo 'Cleaning up...'
                 try {
-                    // Clean up Docker images to save space
-                    sh 'docker image prune -f || true'
-                    
-                    // Clean up any remaining test containers
+                    // Clean up Docker images to save space (keep recent ones)
                     sh '''
+                        echo "Cleaning up old Docker images..."
+                        docker image prune -f || true
+                        
+                        # Clean up any remaining test containers
                         echo "Cleaning up any remaining test containers..."
                         docker ps -a | grep ai-notes-test | awk '{print $1}' | xargs docker rm -f || true
+                        
+                        # Logout from Docker Hub if still logged in
+                        docker logout || true
                     '''
                 } catch (Exception e) {
                     echo "Cleanup failed: ${e.getMessage()}"
@@ -158,7 +254,23 @@ pipeline {
         success {
             echo 'Pipeline completed successfully!'
             echo "✅ Build ${BUILD_NUMBER} completed successfully"
-            echo "🐳 Docker image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+            echo "🐳 Docker image pushed: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+            echo "🔗 Docker Hub: https://hub.docker.com/r/debabrata013/ai-notes-web"
+            
+            // Send success notification (you can add Slack/email here)
+            script {
+                sh '''
+                    echo "SUCCESS SUMMARY:"
+                    echo "================"
+                    echo "✅ Source code checked out"
+                    echo "✅ Dependencies installed"
+                    echo "✅ React app built"
+                    echo "✅ Docker image created"
+                    echo "✅ Image tested"
+                    echo "✅ Pushed to Docker Hub"
+                    echo "🎉 Ready for deployment!"
+                '''
+            }
         }
         
         failure {
@@ -169,7 +281,7 @@ pipeline {
             script {
                 try {
                     sh '''
-                        echo "=== DEBUG INFO ==="
+                        echo "=== FAILURE DEBUG INFO ==="
                         echo "PATH: $PATH"
                         echo "Node location: $(which node || echo 'not found')"
                         echo "NPM location: $(which npm || echo 'not found')"
@@ -177,11 +289,18 @@ pipeline {
                         docker ps -a | grep ai-notes || echo "No ai-notes containers"
                         echo "Docker images:"
                         docker images | grep ai-notes || echo "No ai-notes images"
+                        echo "Docker Hub login status:"
+                        docker info | grep Username || echo "Not logged into Docker Hub"
                     '''
                 } catch (Exception e) {
                     echo "Debug info collection failed: ${e.getMessage()}"
                 }
             }
+        }
+        
+        unstable {
+            echo 'Pipeline completed with warnings!'
+            echo "⚠️ Build ${BUILD_NUMBER} completed with warnings"
         }
     }
 }
