@@ -5,6 +5,8 @@ pipeline {
         DOCKER_IMAGE_NAME = 'debabratap/ai-notes-web'
         DOCKER_TAG = "${BUILD_NUMBER}"
         FRONTEND_DIR = 'frontend'
+        // Set PATH to include Homebrew binaries
+        PATH = "/opt/homebrew/bin:/usr/local/bin:${env.PATH}"
     }
     
     stages {
@@ -19,10 +21,15 @@ pipeline {
             steps {
                 echo 'Displaying environment information...'
                 sh '''
+                    echo "PATH: $PATH"
+                    echo "Which node:"
+                    which node || echo "Node not found in PATH"
+                    echo "Which npm:"
+                    which npm || echo "NPM not found in PATH"
                     echo "Node.js version:"
-                    node --version || echo "Node.js not found"
+                    node --version || echo "Node.js not accessible"
                     echo "NPM version:"
-                    npm --version || echo "NPM not found"
+                    npm --version || echo "NPM not accessible"
                     echo "Docker version:"
                     docker --version || echo "Docker not found"
                     echo "Build Number: ${BUILD_NUMBER}"
@@ -55,6 +62,7 @@ pipeline {
                 echo 'Installing Node.js dependencies...'
                 dir("${FRONTEND_DIR}") {
                     sh '''
+                        echo "Installing dependencies with npm ci..."
                         npm ci
                     '''
                 }
@@ -66,7 +74,10 @@ pipeline {
                 echo 'Building React application...'
                 dir("${FRONTEND_DIR}") {
                     sh '''
+                        echo "Building React app..."
                         npm run build
+                        echo "Build completed, checking dist folder:"
+                        ls -la dist/ || echo "Dist folder not found"
                     '''
                 }
             }
@@ -77,13 +88,18 @@ pipeline {
                 echo 'Building Docker image...'
                 dir("${FRONTEND_DIR}") {
                     script {
-                        // Build Docker image with build number tag
-                        def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
-                        
-                        // Tag as latest
-                        sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest"
-                        
-                        echo "Docker image built successfully: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                        try {
+                            // Build Docker image with build number tag
+                            def dockerImage = docker.build("${DOCKER_IMAGE_NAME}:${DOCKER_TAG}")
+                            
+                            // Tag as latest
+                            sh "docker tag ${DOCKER_IMAGE_NAME}:${DOCKER_TAG} ${DOCKER_IMAGE_NAME}:latest"
+                            
+                            echo "Docker image built successfully: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
+                        } catch (Exception e) {
+                            echo "Docker build failed: ${e.getMessage()}"
+                            throw e
+                        }
                     }
                 }
             }
@@ -94,16 +110,24 @@ pipeline {
                 echo 'Testing Docker image...'
                 script {
                     sh '''
+                        echo "Starting container test..."
                         # Run container in detached mode
                         docker run -d --name ai-notes-test-${BUILD_NUMBER} -p 8081:80 ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}
                         
                         # Wait for container to start
-                        sleep 10
+                        echo "Waiting for container to start..."
+                        sleep 15
                         
                         # Test if container is running
+                        echo "Checking if container is running:"
                         docker ps | grep ai-notes-test-${BUILD_NUMBER}
                         
+                        # Optional: Test HTTP response
+                        echo "Testing HTTP response:"
+                        curl -f http://localhost:8081 || echo "HTTP test failed, but continuing..."
+                        
                         # Cleanup test container
+                        echo "Cleaning up test container..."
                         docker stop ai-notes-test-${BUILD_NUMBER} || true
                         docker rm ai-notes-test-${BUILD_NUMBER} || true
                     '''
@@ -116,22 +140,48 @@ pipeline {
         always {
             script {
                 echo 'Cleaning up...'
-                // Clean up Docker images to save space
-                sh 'docker image prune -f || true'
-                
-                // Clean up test containers if any
-                sh 'docker ps -a | grep ai-notes-test | awk \'{print $1}\' | xargs docker rm -f || true'
+                try {
+                    // Clean up Docker images to save space
+                    sh 'docker image prune -f || true'
+                    
+                    // Clean up any remaining test containers
+                    sh '''
+                        echo "Cleaning up any remaining test containers..."
+                        docker ps -a | grep ai-notes-test | awk '{print $1}' | xargs docker rm -f || true
+                    '''
+                } catch (Exception e) {
+                    echo "Cleanup failed: ${e.getMessage()}"
+                }
             }
         }
         
         success {
             echo 'Pipeline completed successfully!'
             echo "✅ Build ${BUILD_NUMBER} completed successfully"
+            echo "🐳 Docker image: ${DOCKER_IMAGE_NAME}:${DOCKER_TAG}"
         }
         
         failure {
             echo 'Pipeline failed!'
             echo "❌ Build ${BUILD_NUMBER} failed"
+            
+            // Debug information on failure
+            script {
+                try {
+                    sh '''
+                        echo "=== DEBUG INFO ==="
+                        echo "PATH: $PATH"
+                        echo "Node location: $(which node || echo 'not found')"
+                        echo "NPM location: $(which npm || echo 'not found')"
+                        echo "Docker containers:"
+                        docker ps -a | grep ai-notes || echo "No ai-notes containers"
+                        echo "Docker images:"
+                        docker images | grep ai-notes || echo "No ai-notes images"
+                    '''
+                } catch (Exception e) {
+                    echo "Debug info collection failed: ${e.getMessage()}"
+                }
+            }
         }
     }
 }
