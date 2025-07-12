@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      args:
+        - PORT=${PORT}
+        - JWT_SECRET=${JWT_SECRET}
+        - DB_HOST=${DB_HOST}
+        - DB_USER=${DB_USER}
+        - DB_PASSWORD=${DB_PASSWORD}
+        - DB_NAME=${DB_NAME}
+        - DB_PORT=${DB_PORT}
+        - GEMINI_API_KEY=${GEMINI_API_KEY}

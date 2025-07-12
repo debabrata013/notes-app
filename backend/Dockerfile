@@ -1,16 +1,31 @@
-From node:20-alpine as base 
-Workdir /app
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-RUN npm i
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
 COPY . .
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+
+# Change ownership of the app directory
+RUN chown -R nodejs:nodejs /app
+USER nodejs
+
+# Expose port
 EXPOSE 5000
 
-ENV JWT_SECRET=op_secretkey
-ENV PORT=5000
-ENV DB_HOST=localhost
-ENV DB_USER=root
-ENV DB_PASSWORD=root
-ENV DB_NAME=notesdb
-ENV DB_PORT=3306
-ENV GEMINI_API_KEY=AIzaSyCXIN8mpvGqbeE8_h2I8tMtLAfOm-uZRL0
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5000/health || exit 1
+
+# Start the application
 CMD ["npm", "start"]
+
