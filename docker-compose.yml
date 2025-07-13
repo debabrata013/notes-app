@@ -1,64 +1,58 @@
-version: '3.8'
-
 services:
-  ai-notes-db:
-    build:
-      context: ./database
-      dockerfile: Dockerfile
-    container_name: ai-notes-db
-    restart: unless-stopped
+  mysql:
+    image: mysql
+    container_name: mysql-app
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: notesdb
-      MYSQL_USER: appuser
-      MYSQL_PASSWORD: apppass
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mysql-data:/var/lib/mysql
     networks:
-      - ai-notes-network
+      - notes-app
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USER}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  backend-app:
+    image: priyanshijat6701/notes-app-backend-app:latest
+    container_name: backend-app
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: ${PORT}
+      DB_HOST: ${DB_HOST}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    ports:
+      - "${PORT}:${PORT}"
+    networks:
+      - notes-app
+    depends_on:
+      - mysql
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
       retries: 5
       start_period: 30s
 
-  ai-notes-backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ai-notes-backend
-    restart: unless-stopped
+  frontend-app:
+    image: priyanshijat6701/notes-app-frontend-app:latest
+    container_name: frontend-app
     environment:
-      JWT_SECRET: op_secretkey
-      PORT: 5000
-      DB_HOST: ai-notes-db
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: notesdb
-      DB_PORT: 3306
-      GEMINI_API_KEY: AIzaSyCXIN8mpvGqbeE8_h2I8tMtLAfOm-uZRL0
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     ports:
-      - "5000:5000"
-    depends_on:
-      ai-notes-db:
-        condition: service_healthy
+      - "80:80"
     networks:
-      - ai-notes-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-volumes:
-  mysql_data:
-    driver: local
+      - notes-app
+    depends_on:
+      - backend-app
 
 networks:
-  ai-notes-network:
-    driver: bridge
+  notes-app:
