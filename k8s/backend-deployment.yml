@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -76,4 +77,5 @@ spec:
                 configMapKeyRef:
                   name: backend-configmap
                   key: db_port
+
 
