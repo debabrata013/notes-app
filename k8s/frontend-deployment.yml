@@ -16,6 +16,7 @@ spec:
         app: frontend
     spec:
       containers:
-      - name: frontend
-        image: debabratap/ai-notes-web
-      
+      - name: frontend-app
+        image: priyanshijat6701/notes-frontend-image:latest
+        ports:
+        - containerPort: 80
