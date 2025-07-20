@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
-  namespace: backend_ns  
+  namespace: backend-ns  
   labels:
     app: backend
 spec:
@@ -18,5 +18,3 @@ spec:
       containers:
       - name: backend-container
         image: debabratap/ai-notes-backend  
-      - name: database
-        image: debabratap/ai-notes-db

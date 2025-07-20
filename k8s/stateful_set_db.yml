@@ -1,0 +1,35 @@
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: database
+  namespace: backend-ns
+  labels:
+    app: database
+spec:
+  serviceName: "database"
+  replicas: 2
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+      - name: database
+        image: debabratap/ai-notes-db
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/db-data
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 1Gi
+
+

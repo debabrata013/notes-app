@@ -1,0 +1,14 @@
+#  it allow our backend to communicate with the database
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-service
+  namespace: backend-ns
+spec:
+  selector:
+    app: database
+  ports:
+  - port: 3306  
+    targetPort: 3306
+   
