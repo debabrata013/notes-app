@@ -16,9 +16,57 @@ spec:
         app: backend
     spec:
       containers:
-      - name: backend-container
-        image: priyanshijat6701/notes-app-backend-app:latest
-        ports:
-        - containerPort: 5000
+        - name: backend-container
+          image: priyanshijat6701/notes-app-backend-app:latest
+          ports:
+          - containerPort: 5000
         
-      env:    
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: password
+
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: jwt
+
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: gemini
+
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-configmap
+                  key: port
+
+            - name: DB_HOST
+              valueFrom: 
+                configMapKeyRef:
+                  name: backend-configmap
+                  key: host
+
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-configmap
+                  key: user
+
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-configmap
+                  key: user
+
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: backend-configmap
+                  key: db_port
+
