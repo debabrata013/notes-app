@@ -19,4 +19,6 @@ spec:
       - name: backend-container
         image: priyanshijat6701/notes-app-backend-app:latest
         ports:
-        - containerPort: 5000   
+        - containerPort: 5000
+        
+      env:    
