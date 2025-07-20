@@ -28,3 +28,6 @@ spec:
           requests:
             memory: "256Mi"
             cpu: "250m"
+        envFrom:
+        - configMapRef:
+            name: backend-config
