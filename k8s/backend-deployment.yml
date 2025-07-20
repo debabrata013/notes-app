@@ -17,4 +17,6 @@ spec:
     spec:
       containers:
       - name: backend-container
-        image: debabratap/ai-notes-backend  
+        image: priyanshijat6701/notes-app-backend-app:latest
+        ports:
+        - containerPort: 5000   
