@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-configmap
+data:
+  host: localhost
+  user: root
+  name: notesdb
+  db_port: 3306
+  port: 5000
