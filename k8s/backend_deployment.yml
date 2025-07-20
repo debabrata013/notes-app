@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
-  namespace: backendns  # 👈 yeh line add karni hai
+  namespace: backend_ns  
   labels:
     app: backend
 spec:
@@ -17,6 +17,6 @@ spec:
     spec:
       containers:
       - name: backend-container
-        image:   
+        image: debabratap/ai-notes-backend  
       - name: database
-        image: 
+        image: debabratap/ai-notes-db
