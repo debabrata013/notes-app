@@ -5,7 +5,7 @@ metadata:
   name: backend-configmap
   namespace: backend-ns
 data:
-  host: localhost
+  host: database
   user: root
   name: notesdb
   db_port: "3306"
