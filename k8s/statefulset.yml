@@ -29,9 +29,14 @@ spec:
           requests:
             memory: "512Mi"
             cpu: "500m"
+
+        env:
+          - name: MYSQL_ROOT_PASSWORD
+            value: root
+
         volumeMounts:
         - name: mysql-data
-          mountPath: /var/lib/mysql-data
+          mountPath: /var/lib/mysql
       volumes:
       - name: mysql-data
         persistentVolumeClaim:

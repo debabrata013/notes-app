@@ -69,7 +69,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: backend-configmap
-                  key: user
+                  key: name
 
             - name: DB_PORT
               valueFrom:
